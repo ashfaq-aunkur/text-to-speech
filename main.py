@@ -19,7 +19,7 @@ app.add_middleware(
 
 class TTSRequest(BaseModel):
     text: str
-    voice: str = "en-US-AvaNeural"  # Default high-quality neural voice
+    voice: str = "bn-BD-NabanitaNeural"  # Default high-quality neural voice
 
 
 @app.get("/")
