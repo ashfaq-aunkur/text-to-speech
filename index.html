@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test TTS API</title>
+</head>
+<body>
+  <h2>FastAPI TTS Tester</h2>
+  <textarea id="text" rows="4" cols="50">Hello! This response is generated from FastAPI.</textarea><br><br>
+  <button onclick="playTTS()">Read Aloud</button>
+
+  <script>
+    async function playTTS() {
+      const text = document.getElementById('text').value;
+      const response = await fetch('http://127.0.0.1:8000/api/v1/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text })
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+      } else {
+        alert("Failed to generate audio.");
+      }
+    }
+  </script>
+</body>
+</html>
