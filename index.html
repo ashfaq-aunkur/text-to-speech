@@ -1,29 +1,74 @@
 <!DOCTYPE html>
-<html>
+<html lang="bn">
 <head>
-  <title>Test TTS API</title>
+  <meta charset="UTF-8">
+  <title>FastAPI TTS Tester</title>
 </head>
 <body>
-  <h2>FastAPI TTS Tester</h2>
-  <textarea id="text" rows="4" cols="50">Hello! This response is generated from FastAPI.</textarea><br><br>
-  <button onclick="playTTS()">Read Aloud</button>
+  <h2>FastAPI TTS Tester (Bangla / English)</h2>
+  
+  <textarea id="text" rows="4" cols="50">সবাইকে স্বাগতম! এটি একটি টেস্ট ব্যাকএন্ড মেসেজ।</textarea>
+  <br><br>
+  
+  <button id="ttsBtn" onclick="playTTS()">🔊 Read Aloud</button>
 
   <script>
-    async function playTTS() {
-      const text = document.getElementById('text').value;
-      const response = await fetch('http://127.0.0.1:8000/api/v1/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text })
-      });
+    let currentAudio = null;
+    let currentAudioUrl = null;
 
-      if (response.ok) {
+    async function playTTS() {
+      const textInput = document.getElementById('text').value;
+      const ttsBtn = document.getElementById('ttsBtn');
+
+      if (!textInput.trim()) {
+        alert("Please enter some text!");
+        return;
+      }
+
+      // 1. Stop previous audio playing & clean up memory
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      }
+      if (currentAudioUrl) {
+        URL.revokeObjectURL(currentAudioUrl);
+      }
+
+      // 2. Set UI loading state
+      ttsBtn.disabled = true;
+      ttsBtn.innerText = "⏳ Generating Audio...";
+
+      try {
+        const response = await fetch('http://127.0.0.1:9000/api/v1/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: textInput })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || "Failed to generate audio.");
+        }
+
+        // 3. Play generated audio
         const audioBlob = await response.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        audio.play();
-      } else {
-        alert("Failed to generate audio.");
+        currentAudioUrl = URL.createObjectURL(audioBlob);
+        currentAudio = new Audio(currentAudioUrl);
+
+        currentAudio.onended = () => {
+          ttsBtn.innerText = "🔊 Read Aloud";
+        };
+
+        await currentAudio.play();
+
+      } catch (error) {
+        alert(`Error: ${error.message}`);
+      } finally {
+        // 4. Reset button state
+        ttsBtn.disabled = false;
+        if (!currentAudio || currentAudio.paused) {
+          ttsBtn.innerText = "🔊 Read Aloud";
+        }
       }
     }
   </script>
